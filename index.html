@@ -10,6 +10,7 @@
          margin: 0;
          overflow: hidden;
       }
+
       #canvas {
          margin: 0;
          display: block;
@@ -74,6 +75,16 @@
       "   float depth = rgbaDepth.a;\n" +
       "   float visibility = (shadowCoord.z > depth + 0.005) ? 0.5 : 1.0;\n" +
       "   gl_FragColor = vec4(v_Color.rgb * visibility, v_Color.a);\n" +
+
+      "  if(shadowCoord.x < 0.0 || shadowCoord.x > 1.0 || shadowCoord.y < 0.0 || shadowCoord.y > 1.0){\n" +
+      "     gl_FragColor = v_Color;\n" +
+      "  }else{\n" +
+      "     if(visibility < 1.0){\n" +
+      "        gl_FragColor = vec4(1.0,0.0,0.0,1.0);" +
+      "     }else{" +
+      "        gl_FragColor = vec4(0.0,1.0,0.0,1.0);" +
+      "     }" +
+      "  }" +
       "}\n";
 
    //生成的纹理的分辨率，纹理必须是标准的尺寸 256*256 1024*1024  2048*2048
@@ -112,16 +123,16 @@
          console.log("无法获取到正常绘制着色器的相关变量");
          return;
       }
-     //设置相关数据，并存入缓冲区内
-     var triangle = initVertexBuffersForTriangle(gl);
-     var plane = initVertexBuffersForPlane(gl);
-     if (!triangle || !plane) {
-        console.log("无法设置相关顶点的信息");
-        return;
-     }
-     //设置帧缓冲区对象
-     var fbo = initFramebufferObject(gl);
-     if (!fbo) {
+      //设置相关数据，并存入缓冲区内
+      var triangle = initVertexBuffersForTriangle(gl);
+      var plane = initVertexBuffersForPlane(gl);
+      if (!triangle || !plane) {
+         console.log("无法设置相关顶点的信息");
+         return;
+      }
+      //设置帧缓冲区对象
+      var fbo = initFramebufferObject(gl);
+      if (!fbo) {
          console.log("无法设置帧缓冲区对象");
          return;
       }
@@ -133,12 +144,18 @@
       gl.enable(gl.DEPTH_TEST);
       //声明一个光源的变换矩阵
       var viewProjectMatrixFromLight = new Matrix4();
-      viewProjectMatrixFromLight.setPerspective(70.0, offset_width / offset_height, 1.0, 100.0);
+      viewProjectMatrixFromLight.setPerspective(20.0, offset_width / offset_height, 1.0, 100.0);
       viewProjectMatrixFromLight.lookAt(light_x, light_y, light_z, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
       //为常规绘图准备视图投影矩阵
       var viewProjectMatrix = new Matrix4();
-      viewProjectMatrix.setPerspective(45.0, canvas.width / canvas.height, 1.0, 100.0);
+      viewProjectMatrix.setPerspective(70.0, canvas.width / canvas.height, 1.0, 100.0);
       viewProjectMatrix.lookAt(0.0, 7.0, 9.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+
+      // var p = new Vector4([-3.0, -1.7, -2.5, 1.0]);
+      // p = viewProjectMatrix.multiplyVector4(p);
+      // p = (p.xyz / p.w) / 2.0 + 0.5;
+      // alert(p.elements.toString());
+
       var currentAngle = 0.0; //声明当前旋转角度的变量
       var mvpMatrixFromLight_t = new Matrix4(); //光源（三角形）的模型投影矩阵
       var mvpMatrixFromLight_p = new Matrix4(); //光源（平面）的模型投影矩阵
@@ -316,6 +333,9 @@
       var obj = {};
       //将顶点信息写入缓冲区对象
       obj.vertexBuffer = initArrayBufferForLaterUse(gl, vertices, 3, gl.FLOAT);
+
+      // alert(obj.vertexBuffer.toString());
+
       obj.colorBuffer = initArrayBufferForLaterUse(gl, colors, 3, gl.FLOAT);
       obj.indexBuffer = initElementArrayBufferForLaterUse(gl, indices, gl.UNSIGNED_BYTE);
       if (!obj.vertexBuffer || !obj.colorBuffer || !obj.indexBuffer) return null;
